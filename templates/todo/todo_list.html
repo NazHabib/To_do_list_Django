@@ -1,0 +1,129 @@
+{% extends 'base.html' %}
+
+{% block title %}Todo List{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="fas fa-list"></i> My Tasks</h2>
+            <a href="{% url 'add_todo' %}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Add New Task
+            </a>
+        </div>
+
+        <!-- Filters and Search -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <form method="GET" class="row g-3">
+                    <div class="col-md-4">
+                        <input type="text" class="form-control" name="search" 
+                               placeholder="Search tasks..." value="{{ search_query }}">
+                    </div>
+                    <div class="col-md-3">
+                        <select name="status" class="form-control">
+                            <option value="all" {% if filter_status == 'all' %}selected{% endif %}>All Status</option>
+                            <option value="pending" {% if filter_status == 'pending' %}selected{% endif %}>Pending</option>
+                            <option value="completed" {% if filter_status == 'completed' %}selected{% endif %}>Completed</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <select name="priority" class="form-control">
+                            <option value="all" {% if filter_priority == 'all' %}selected{% endif %}>All Priorities</option>
+                            <option value="high" {% if filter_priority == 'high' %}selected{% endif %}>High</option>
+                            <option value="medium" {% if filter_priority == 'medium' %}selected{% endif %}>Medium</option>
+                            <option value="low" {% if filter_priority == 'low' %}selected{% endif %}>Low</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <button type="submit" class="btn btn-outline-primary w-100">
+                            <i class="fas fa-search"></i> Filter
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Todo List -->
+        {% if todos %}
+            <div class="row">
+                {% for todo in todos %}
+                    <div class="col-md-6 mb-3">
+                        <div class="card h-100 {% if todo.completed %}border-success{% endif %}">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <h5 class="card-title {% if todo.completed %}text-muted text-decoration-line-through{% endif %}">
+                                        {{ todo.title }}
+                                    </h5>
+                                    <span class="badge bg-{% if todo.priority == 'high' %}danger{% elif todo.priority == 'medium' %}warning{% else %}secondary{% endif %}">
+                                        {{ todo.get_priority_display }}
+                                    </span>
+                                </div>
+                                
+                                {% if todo.description %}
+                                    <p class="card-text {% if todo.completed %}text-muted{% endif %}">
+                                        {{ todo.description|truncatewords:20 }}
+                                    </p>
+                                {% endif %}
+                                
+                                <div class="text-muted small mb-3">
+                                    <i class="fas fa-calendar"></i> Created: {{ todo.created_at|date:"M d, Y" }}
+                                    {% if todo.due_date %}
+                                        <br><i class="fas fa-clock"></i> Due: {{ todo.due_date|date:"M d, Y H:i" }}
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="btn-group w-100" role="group">
+                                    <a href="{% url 'toggle_todo' todo.id %}" 
+                                       class="btn btn-sm {% if todo.completed %}btn-warning{% else %}btn-success{% endif %}">
+                                        <i class="fas fa-{% if todo.completed %}undo{% else %}check{% endif %}"></i>
+                                        {% if todo.completed %}Undo{% else %}Complete{% endif %}
+                                    </a>
+                                    <a href="{% url 'edit_todo' todo.id %}" class="btn btn-sm btn-primary">
+                                        <i class="fas fa-edit"></i> Edit
+                                    </a>
+                                    <button type="button" class="btn btn-sm btn-danger" 
+                                            data-bs-toggle="modal" data-bs-target="#deleteModal{{ todo.id }}">
+                                        <i class="fas fa-trash"></i> Delete
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Delete Modal -->
+                    <div class="modal fade" id="deleteModal{{ todo.id }}" tabindex="-1">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title">Confirm Delete</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                </div>
+                                <div class="modal-body">
+                                    Are you sure you want to delete "{{ todo.title }}"?
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                    <form method="POST" action="{% url 'delete_todo' todo.id %}" class="d-inline">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-danger">Delete</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-clipboard-list fa-5x text-muted mb-3"></i>
+                <h4 class="text-muted">No tasks found</h4>
+                <p class="text-muted">Start by adding your first task!</p>
+                <a href="{% url 'add_todo' %}" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Add Task
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
